@@ -48,7 +48,7 @@ body{font-family:'PingFang SC','SF Pro Display',-apple-system,'Segoe UI',sans-se
 .btn.oai{background:transparent;color:#7160b8;border-color:#b8afe0}
 .btn.omi{background:transparent;color:var(--t2);border-color:var(--bd)}
 .btn.ore{background:transparent;color:var(--re);border-color:var(--re)}
-input:not([type=checkbox]):not([type=color]),textarea,select{width:100%;padding:10px 13px;border-radius:var(--rs);border:1.5px solid var(--bd);font-size:14px;outline:none;font-family:inherit;background:var(--sf2);transition:border-color .2s,background .15s;resize:vertical;-webkit-appearance:none}
+input:not([type=checkbox]):not([type=color]),textarea,select{width:100%;padding:10px 13px;border-radius:var(--rs);border:1.5px solid var(--bd);font-size:16px;outline:none;font-family:inherit;background:var(--sf2);transition:border-color .2s,background .15s;resize:vertical;-webkit-appearance:none}
 input:not([type=checkbox]):focus,textarea:focus{border-color:var(--fi);background:var(--sf)}
 input[type=checkbox]{width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:var(--fi)}
 input[type=color]{padding:3px 5px;height:40px;cursor:pointer}
@@ -300,6 +300,16 @@ input:not([type=checkbox]):focus,textarea:focus,select:focus{border-color:var(--
   .tl-time-col{width:50px}
 }
 </style>
+<style id="form-control-readable-size">
+@media (max-width: 900px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+</style>
+<script src="./stability.js"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -313,8 +323,8 @@ const CATS=[
   {id:'utilities',icon:'💡',label:'水电',c:'#038387',lc:'#e8f7f7',bk:'utilities'},
   {id:'parents',icon:'🤝',label:'家庭共筑金',c:'#0f6cbd',lc:'#eaf4ff',bk:'parents'},
   {id:'saving',icon:'🔒',label:'强制储蓄',c:'#2d9b65',lc:'#eaf8f0',bk:'saving'},
-  {id:'food',icon:'🍜',label:'吃饭',c:'#d66b3d',lc:'#fff1ea'},
-  {id:'transit',icon:'🚌',label:'交通',c:'#008272',lc:'#e7f7f4'},
+  {id:'food',icon:'🍜',label:'吃饭',c:'#d66b3d',lc:'#fff1ea',bk:'food'},
+  {id:'transit',icon:'🚌',label:'交通',c:'#008272',lc:'#e7f7f4',bk:'transit'},
   {id:'social',icon:'🤝',label:'社交',c:'#1683c7',lc:'#e8f6ff',bk:'social'},
   {id:'wish',icon:'🎁',label:'愿望购买',c:'#7160b8',lc:'#f1effb',bk:'wishFund'},
   {id:'shop',icon:'🛍️',label:'购物',c:'#c05aa0',lc:'#fff0f8'},
@@ -354,10 +364,8 @@ const CN_2026_DAYS={
 const TABS=[
   {id:'home',l:'今日',i:'layout-dashboard',c:'#0f6cbd'},
   {id:'fin',l:'财务',i:'wallet-cards',c:'#1683c7'},
-  {id:'learn',l:'学习',i:'book-open',c:'var(--le)'},
   {id:'work',l:'工作',i:'briefcase-business',c:'var(--wo)'},
   {id:'sch',l:'日程',i:'calendar-days',c:'var(--sc)'},
-  {id:'life',l:'生活',i:'sparkles',c:'#d45b91'},
 ];
 // Rich quotes with authors
 const QUOTES=[
@@ -800,9 +808,32 @@ const fDelTrip=id=>{S.fin.trips=(S.fin.trips||[]).filter(t=>t.id!==id);S.sch.eve
 const fParse=async()=>{
   if(!fPaste.trim())return;
   fParseBusy=true;renderApp();
-  try{const r=await callAI([{role:'user',content:fPaste}],`你是中文自然语言记账助手。把用户文本拆成一笔或多笔资金记录，返回纯JSON数组，不要markdown。每项格式：{"amount":正数,"merchant":"商户或来源","category":"rent|utilities|parents|saving|food|transit|social|wish|shop|fun|other|bonus|allowance|reimburse|side|otherIncome","flow":"expense|income","date":"YYYY-MM-DD","note":"简短说明"}。识别昨天、今天等相对日期。收入才使用 bonus/allowance/reimburse/side/otherIncome。今天：${toDay()}`);const parsed=parseAIJson(r);fParsed=(Array.isArray(parsed)?parsed:[parsed]).filter(x=>+x.amount>0).map(x=>({...x,amount:+x.amount,date:x.date||toDay(),flow:x.flow==='income'?'income':'expense'}));}catch(e){toast('解析失败：'+e.message,5000);}fParseBusy=false;renderApp();
+  try{const r=await callAI([{role:'user',content:fPaste}],`你是中文自然语言记账助手。把用户文本拆成一笔或多笔资金记录，返回纯JSON数组，不要markdown。每项格式：{"amount":正数,"merchant":"商户或来源","category":"rent|utilities|parents|saving|food|transit|social|wish|shop|fun|other|bonus|allowance|reimburse|side|otherIncome","flow":"expense|income","date":"YYYY-MM-DD","note":"简短说明"}。识别昨天、今天等相对日期。收入才使用 bonus/allowance/reimburse/side/otherIncome。分类规则：外卖/奶茶/咖啡/炸鸡/火锅/烧烤/超市买菜/餐厅→food；打车/地铁/公交/高铁/机票→transit；衣服/化妆品/网购→shop；电影/游戏/娱乐→fun；聚餐/人情→social。今天：${toDay()}`);const parsed=parseAIJson(r);fParsed=(Array.isArray(parsed)?parsed:[parsed]).filter(x=>+x.amount>0).map(x=>({...x,amount:+x.amount,date:x.date||toDay(),flow:x.flow==='income'?'income':'expense',category:normalizeCat(x)}));}catch(e){toast('解析失败：'+e.message,5000);}fParseBusy=false;renderApp();
 };
-const fConfirm=()=>{if(!Array.isArray(fParsed)||!fParsed.length)return;const rows=fParsed.map(x=>({id:uid(),date:x.date||toDay(),amount:+x.amount,cat:x.category||'other',flow:x.flow||'expense',note:x.note||x.merchant||''}));rows.slice().reverse().forEach(x=>S.fin.expenses.unshift(x));const ids=new Set(rows.map(x=>x.id)),n=rows.length;fPaste='';fParsed=null;fPan=null;save();renderApp();offerUndo(`已加入 ${n} 笔记录`,()=>{S.fin.expenses=S.fin.expenses.filter(x=>!ids.has(x.id));save();renderApp();toast('已撤销记账');});};
+const FOOD_RE=/外卖|美团外卖|饿了么|叮咚买菜|盒马|朴朴|每日优鲜|美团买菜|菜市场|超市|便利店|全家|711|罗森|便利蜂|早餐|早饭|午餐|午饭|晚餐|晚饭|夜宵|宵夜|下午茶|早茶|正餐|快餐|小吃|套餐|吃饭|餐饮|餐厅|饭店|食堂|小馆|酒楼|自助餐|面条|拉面|刀削面|热干面|豆浆|油条|煎饼|馄饨|饺子|包子|馒头|粥|稀饭|炒饭|盖饭|炒菜|米饭|炒面|麻辣烫|麻辣香锅|冒菜|串串|钵钵鸡|炒粉|肠粉|火锅|烧烤|烤肉|铁板烧|烤串|撸串|海底捞|呷哺|凑凑|大龙燚|小龙坎|炸鸡|汉堡|薯条|鸡块|热狗|三明治|披萨|意面|牛排|沙拉|寿司|刺身|日料|日本料理|韩料|韩餐|韩国料理|烤鱼|烤鸭|奶茶|咖啡|拿铁|美式|卡布奇诺|摩卡|茶饮|果茶|气泡水|牛奶|酸奶|可乐|雪碧|饮料|果汁|柠檬水|椰子水|珍珠奶茶|喜茶|奈雪|蜜雪冰城|茶百道|古茗|书亦|CoCo|益禾堂|沪上阿姨|霸王茶姬|瑞幸|星巴克|Manner|咖啡馆|甜品|甜点|蛋糕|面包|糕点|冰淇淋|雪糕|冷饮|布丁|马卡龙|零食|薯片|饼干|巧克力|糖果|坚果|水果|买菜|蔬菜|请客吃饭|聚餐饭|肯德基|KFC|麦当劳|必胜客|汉堡王|德克士|华莱士|塔斯汀|库迪|真功夫|吉野家|沙县|兰州拉面|黄焖鸡/;
+const TRANSIT_RE=/打车|网约车|滴滴|滴滴出行|快车|专车|顺风车|曹操出行|哈啰出行|T3出行|享道|如祺|高德打车|出租车|出租|的士|地铁|轻轨|BRT|有轨电车|城铁|公交|公共汽车|大巴|班车|共享单车|摩拜|哈啰单车|青桔|美团单车|骑行|高铁|动车|火车|城际|高铁票|火车票|飞机|机票|航班|航空|加油|油费|停车|停车费|ETC|过路费|高速费|路桥费|通勤|交通/;
+const normalizeCat=x=>{
+  let cat=String(x.category||x.cat||'');
+  const n=String(x.note||x.merchant||'');
+  if(!cat||cat==='other'){
+    if(FOOD_RE.test(n))cat='food';
+    else if(TRANSIT_RE.test(n))cat='transit';
+  }
+  return cat||'other';
+};
+const migrateExpenseCats=()=>{
+  if(CFG.catMigrV2)return;
+  let n=0;
+  (S.fin.expenses||[]).forEach(e=>{
+    const txt=String(e.note||'');
+    if((!e.cat||e.cat==='other')&&FOOD_RE.test(txt)){e.cat='food';n++;}
+    else if((!e.cat||e.cat==='other')&&TRANSIT_RE.test(txt)){e.cat='transit';n++;}
+  });
+  if(n>0)saveLoc();
+  saveCfg({...CFG,catMigrV2:true});
+  if(n>0)setTimeout(()=>toast('已自动修正 '+n+' 条历史分类'),600);
+};
+const fConfirm=()=>{if(!Array.isArray(fParsed)||!fParsed.length)return;const rows=fParsed.map(x=>({id:uid(),date:x.date||toDay(),amount:+x.amount,cat:normalizeCat(x),flow:x.flow||'expense',note:x.note||x.merchant||''}));rows.slice().reverse().forEach(x=>S.fin.expenses.unshift(x));const ids=new Set(rows.map(x=>x.id)),n=rows.length;fPaste='';fParsed=null;fPan=null;save();renderApp();offerUndo(`已加入 ${n} 笔记录`,()=>{S.fin.expenses=S.fin.expenses.filter(x=>!ids.has(x.id));save();renderApp();toast('已撤销记账');});};
 const finReviewAI=async()=>{
   if(fReview.l)return;
   if(!CFG.aiKey){toast('设置 AI Key 后可生成财务复盘');return;}
@@ -1342,8 +1373,8 @@ const scParseNatural=async()=>{
   if(!CFG.aiKey){toast('设置 AI Key 后可使用一句话排日程');return;}
   scNlBusy=true;scNlParsed=[];renderApp();
   try{
-    const tomorrow=addDays(toDay(),1),existing=(S.sch.events||[]).filter(e=>e.date>=toDay()&&e.date<=addDays(toDay(),7)).map(e=>({title:e.title,date:e.date,start:e.start,end:e.end,allDay:e.allDay})),todos=(S.work.todos||[]).filter(t=>!t.done).slice(0,8).map(t=>({text:t.text,date:t.date,priority:t.prio})),learn=(S.learn.goals||[]).slice(0,4).map(g=>({goal:g.title,next:(g.subtasks||[]).find(x=>!x.done)?.text||g.title}));
-    const r=await callAI([{role:'user',content:JSON.stringify({request:scNl,today:toDay(),tomorrow,existing,todos,learn,workRoutine:'工作日 09:00-11:30、14:00-18:00，12:00-14:00 午饭午休，19:00 到宿舍'})}],`你是中文日程规划助手。把请求转换成不冲突、留有缓冲的日程建议。返回纯JSON数组，不要markdown。每项格式：{"title":"标题","date":"YYYY-MM-DD","endDate":"YYYY-MM-DD","start":"HH:MM","end":"HH:MM","allDay":false,"type":"focus|meeting|rest|life","note":"可选说明","remind":10}。如果用户说帮我安排明天，结合待办、学习下一步、已有日程和作息安排最重要的事项；不要重复已有日程。`);
+    const tomorrow=addDays(toDay(),1),existing=(S.sch.events||[]).filter(e=>e.date>=toDay()&&e.date<=addDays(toDay(),7)).map(e=>({title:e.title,date:e.date,start:e.start,end:e.end,allDay:e.allDay})),todos=(S.work.todos||[]).filter(t=>!t.done).slice(0,8).map(t=>({text:t.text,date:t.date,priority:t.prio}));
+    const r=await callAI([{role:'user',content:JSON.stringify({request:scNl,today:toDay(),tomorrow,existing,todos,workRoutine:'工作日 09:00-11:30、14:00-18:00，12:00-14:00 午饭午休，19:00 到宿舍'})}],`你是中文日程规划助手。把请求转换成不冲突、留有缓冲的日程建议。返回纯JSON数组，不要markdown。每项格式：{"title":"标题","date":"YYYY-MM-DD","endDate":"YYYY-MM-DD","start":"HH:MM","end":"HH:MM","allDay":false,"type":"focus|meeting|rest|life","note":"可选说明","remind":10}。如果用户说帮我安排明天，结合待办、学习下一步、已有日程和作息安排最重要的事项；不要重复已有日程。`);
     const parsed=parseAIJson(r);
     scNlParsed=(Array.isArray(parsed)?parsed:[parsed]).filter(x=>x?.title&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)).map(x=>{
       const allDay=!!x.allDay,start=allDay?'':(/^\d{2}:\d{2}$/.test(x.start||'')?x.start:''),rawEnd=allDay?'':(/^\d{2}:\d{2}$/.test(x.end||'')?x.end:'');
@@ -1526,14 +1557,14 @@ const setupFinish=async()=>{
 let qBusy=false;
 const activityDates=()=>new Set([
   ...(S.fin?.expenses||[]).map(x=>x.date),
-  ...(S.learn?.logs||[]).map(x=>x.date),
   ...(S.work?.logs||[]).map(x=>x.date),
   ...(S.work?.todos||[]).filter(x=>x.done).map(x=>x.date),
   ...(S.sch?.events||[]).filter(x=>x.done).map(x=>x.date),
 ].filter(Boolean));
 const activityStreak=()=>{const set=activityDates();let d=toDay(),n=0;if(!set.has(d))d=addDays(d,-1);while(set.has(d)){n++;d=addDays(d,-1);}return n;};
 const personalSnapshot=()=>{
-  const td=toDay(),week=weekBounds(),month=(S.fin?.expenses||[]).filter(e=>e.date?.startsWith(curMo())),weekRows=(S.fin?.expenses||[]).filter(e=>e.date>=week.start&&e.date<=week.end),doneEvents=(S.sch?.events||[]).filter(e=>e.done&&e.date===td).length,doneWork=(S.work?.todos||[]).filter(t=>t.done&&t.date===td).length,goals=(S.learn?.goals||[]).map(g=>({title:g.title,done:(g.subtasks||[]).filter(x=>x.done).length,total:(g.subtasks||[]).length})),wishes=(S.fin?.wishlist||[]).map(w=>({name:w.name,gap:Math.max(0,(+w.price||0)-(+w.saved||0))}));
+  const goals=[];
+  const td=toDay(),week=weekBounds(),month=(S.fin?.expenses||[]).filter(e=>e.date?.startsWith(curMo())),weekRows=(S.fin?.expenses||[]).filter(e=>e.date>=week.start&&e.date<=week.end),doneEvents=(S.sch?.events||[]).filter(e=>e.done&&e.date===td).length,doneWork=(S.work?.todos||[]).filter(t=>t.done&&t.date===td).length,wishes=(S.fin?.wishlist||[]).map(w=>({name:w.name,gap:Math.max(0,(+w.price||0)-(+w.saved||0))}));
   return{date:td,streak:activityStreak(),todayCompleted:doneEvents+doneWork,weekAccountingDays:new Set(weekRows.map(x=>x.date)).size,monthRecords:month.length,goals,wishes};
 };
 const personalPulse=()=>{
@@ -1576,7 +1607,7 @@ const currentIncome=()=>{
   return calcSal(gs,toDay(),true,S.set).net;
 };
 const onboardingSteps=()=>[
-  {label:'写下一个明确的下一步',done:(S.work.todos||[]).length+(S.learn.goals||[]).length>0,action:"wPan='manage';goTab('work')",button:'添加下一步'},
+  {label:'写下一个明确的下一步',done:(S.work.todos||[]).length>0,action:"wPan='manage';goTab('work')",button:'添加下一步'},
   {label:'把一件事放进时间轴',done:(S.sch.events||[]).length>0,action:"goTab('sch')",button:'打开时间轴'},
   {label:'记下第一笔真实资金流动',done:(S.fin.expenses||[]).length>0,action:"goTab('fin')",button:'记第一笔'}
 ];
@@ -1588,39 +1619,31 @@ const rOnboarding=()=>{
 };
 const rHome=()=>{
   const td=toDay(),allPending=(S.work.todos||[]).filter(t=>!t.done).sort((a,b)=>(a.prio||2)-(b.prio||2)||(a.date||'9999').localeCompare(b.date||'9999')),todayWork=allPending.filter(t=>!t.date||t.date<=td),wkPending=(S.work.wkGoals||[]).filter(g=>!g.done),workNext=todayWork[0]||allPending[0],pendingWorkCount=allPending.length+wkPending.length;
-  const learnGoals=(S.learn.goals||[]).filter(g=>{const ts=g.subtasks||[];return !ts.length||ts.some(t=>!t.done);});
-  const reviews=(S.learn.logs||[]).filter(l=>l.nextReview&&l.nextReview<=td);
   const events=(S.sch?.events||[]).filter(e=>scOccurs(e,td)).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99')),pendingEvents=events.filter(e=>!e.done&&e.showAs!=='free'),scheduledTodoIds=new Set(pendingEvents.map(e=>e.todoId).filter(Boolean)),todayPendingCount=pendingEvents.length+todayWork.filter(t=>!scheduledTodoIds.has(t.id)).length;
   const bi=scBusyInfo(td),monthRows=(S.fin.expenses||[]).filter(e=>e.date?.startsWith(curMo())),fp=finPlan(S.fin.budget,currentIncome(),monthRows);
-  const nextLearn=learnGoals[0],nextStep=(nextLearn?.subtasks||[]).find(t=>!t.done);
-  return `${rOnboarding()}<div class="module-hero home up">
+  return `${rOnboarding()}${rCountdownBlock()}${rCdnModal()}<div class="module-hero home up">
     <div class="module-kicker">今日总览</div>
     <div class="metric-grid">
       <div class="metric"><div class="num">${(bi.free/60).toFixed(1)}h</div><div class="lbl">07:00–23:00 空闲</div></div>
       <div class="metric"><div class="num">${todayPendingCount}</div><div class="lbl">今日待完成</div></div>
-      <div class="metric"><div class="num">${reviews.length}</div><div class="lbl">到期复习</div></div>
+      <div class="metric"><div class="num" style="color:${fp.extraLeft<0?'var(--re)':'inherit'}">${fp.hasIncome?fm(Math.abs(fp.extraLeft)):'—'}</div><div class="lbl">${fp.extraLeft>=0?'还能花':'已超支'}</div></div>
     </div>
   </div>
   <div class="card up">
     <div class="section-head"><div><div class="shd">今天的时间</div><div class="section-note">${bi.conflicts?bi.conflicts+' 个时间冲突需要处理':'当前没有时间冲突'}</div></div><button class="btn osc xs" onclick="goTab('sch')">打开时间轴</button></div>
     ${events.length?events.slice(0,5).map(e=>`<div class="row"><input type="checkbox" ${e.done?'checked':''} onchange="scToggleDone('${e.id}')"><div style="width:52px;font-size:11px;font-weight:800;color:var(--sc);flex-shrink:0">${e.start||'全天'}${e.end?'<br>'+e.end:''}</div><div style="flex:1"><div style="font-size:13px;font-weight:700;text-decoration:${e.done?'line-through':'none'}">${esc(e.title)}</div><div class="sub">${scTypeLabel(e.type)}${e.remind?' · ⏰提前'+e.remind+'分钟':''}</div></div><button class="btn omi xs" onclick="scEditEv('${e.id}')">编辑</button></div>`).join(''):`<div class="empty" style="padding:12px 0">今天还没有时间块</div>`}
   </div>
-  <div class="g2 up">
-    <div class="card" style="margin:0">
+  <div class="card up">
       <div class="section-head"><div><div class="shd">工作下一步</div><div class="section-note">只看最重要的一件</div></div><button class="btn owo xs" onclick="goTab('work')">查看</button></div>
       ${workNext?`<div style="font-size:14px;font-weight:800;line-height:1.5">${esc(workNext.text)}</div><div class="sub">${workNext.date&&workNext.date<td?'已逾期 · ':workNext.date===td?'今天 · ':workNext.date?'计划 '+fd(workNext.date)+' · ':'未定日期 · '}全部还有 ${pendingWorkCount} 项</div><div style="display:flex;gap:6px;margin-top:10px"><button class="btn owo xs" onclick="wSchedule('${workNext.id}')">排进日程</button><button class="btn wo xs" onclick="wTogT('${workNext.id}')">完成</button></div>`:wkPending[0]?`<div style="font-size:14px;font-weight:800;line-height:1.5">${esc(wkPending[0].text)}</div><div class="sub">本周目标 · 全部还有 ${pendingWorkCount} 项</div><button class="btn owo xs" onclick="goTab('work')" style="margin-top:10px">前往工作板块</button>`:`<div class="empty" style="padding:12px 0">没有待办</div>`}
-    </div>
-    <div class="card" style="margin:0">
-      <div class="section-head"><div><div class="shd">学习下一步</div><div class="section-note">${reviews.length} 项到期复习</div></div><button class="btn ole xs" onclick="goTab('learn')">查看</button></div>
-      ${nextLearn?`<div style="font-size:14px;font-weight:800;line-height:1.5">${esc(nextStep?.text||nextLearn.title)}</div><div class="sub">${esc(nextLearn.title)}</div><button class="btn le xs" onclick="lSchedule('${nextLearn.id}')" style="margin-top:10px">排进日程</button>`:`<div class="empty" style="padding:12px 0">没有学习目标</div>`}
-    </div>
   </div>
-  ${rCountdownBlock()}${rCdnModal()}`;
+  `;
 };
 
 // ── Main Render ───────────────────────────────────────────
 let TAB='home';
 const renderApp=()=>{
+  if(TAB==='learn'||TAB==='life')TAB='home';
   const q=S.set.personalNote?.date===toDay()?{q:S.set.personalNote.text,a:'基于今日数据'}:personalPulse();
   const qText=q.q||'';
   const qAuth=q.a||'';
@@ -1689,6 +1712,7 @@ const renderApp=()=>{
   saveLoc();
   // Init quote if empty
   if(!S.set.quote)S.set.quote=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  migrateExpenseCats();
   renderApp();
   checkBackupReminder();
   await sDn();
