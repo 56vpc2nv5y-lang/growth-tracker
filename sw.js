@@ -1,5 +1,5 @@
-const CACHE = 'growth-tracker-v6-safe-firebase';
-const APP_SHELL = ['/', '/growth_tracker.html', '/manifest.webmanifest', '/app-icon.svg', '/app-icon-192.png', '/app-icon-512.png'];
+const CACHE = 'growth-tracker-v14-stability';
+const APP_SHELL = ['/', '/growth_tracker.html', '/stability.js', '/smoke-test.html', '/manifest.webmanifest', '/app-icon.svg', '/app-icon-192.png', '/app-icon-512.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)));
